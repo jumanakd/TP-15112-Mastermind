@@ -18,6 +18,7 @@ class interface():
         self.lost = pygame.image.load('loss.png')
         self.menu = pygame.image.load('mainmenu.png')
         self.scoringBoard = pygame.image.load('AIboard.png')
+        self.wonAI = pygame.image.load('winAI.png')
         self.colors = [self.redPeg, self.greenPeg, self.bluePeg,
                        self.yellowPeg, self.purplePeg, self.orangePeg]
         self.red = False
@@ -26,16 +27,19 @@ class interface():
         self.yellow = False
         self.purple = False
         self.orange = False
+        self.white = False
+        self.black = False
         self.drag = False
         self.check = False
         self.openmenu = True
         self.codeBreakerPressed = False
         self.codeSetterPressed = False
         self.codeSet = False
-        self.rowFull = False
+        self.rowFull = True
         self.selectedPeg = self.redPeg
         self.imagesToDisplay = list()
         self.rowCount = 0
+        self.blackCount, self.whiteCount = 0, 0
         self.guess = [0, 0, 0, 0]
         self.guessCode = [0, 0, 0, 0]
         self.score = [0 , 0]
@@ -148,7 +152,7 @@ class interface():
     def getScore(self):
         return scoreBoard(self.hiddenCode, self.guessCode)
 
-    # add the score pegs
+        # add the score pegs
     def placeScorePegs(self):
         if self.check == True:
 
@@ -160,10 +164,18 @@ class interface():
             # add white pegs
             if self.score[1] > 0:
                 for i in range(self.score[1]):
-                    self.imagesToDisplay.append([self.whitePeg, (i * 28) + 195 + (self.score[0] * 28), 548 - (50 * (self.rowCount - 1))])
+                    self.imagesToDisplay.append(
+                        [self.whitePeg, (i * 28) + 195 + (self.score[0] * 28), 548 - (50 * (self.rowCount - 1))])
+
             if self.score[0] != 4:
                 self.score[0], self.score[1] = 0, 0
                 self.guessCode = [0, 0, 0, 0]
+
+    def checkIfRowFilled(self):
+        for color in self.guessCode:
+            if color == 0:
+                self.rowFull = False
+
 
     # check win or loss condition
     def checkWinOrLoss(self):
@@ -193,7 +205,7 @@ class interface():
                     if x > 105 and x < 230 and y > 380 and y < 505:
                         self.codeBreakerPressed = True
                         self.openmenu = False
-
+                    # if code setter is clicked
                     elif x > 105 and x < 230 and y > 520 and y < 645:
                         self.codeSetterPressed = True
                         self.openmenu = False
@@ -206,12 +218,13 @@ class interface():
         self.placeScorePegs()
         self.checkWinOrLoss()
 
+    # let user enter his code
     def setCodeAI(self, x, y):
 
         window.blit(self.board, (0, 0))
 
-        for peg in self.imagesToDisplay:
-            window.blit(peg[0], (peg[1], peg[2]))
+        # for peg in self.imagesToDisplay:
+        #     window.blit(peg[0], (peg[1], peg[2]))
 
         offset = 20
         for event in pygame.event.get():
@@ -251,6 +264,8 @@ class interface():
                 elif x > 262 and x < 318 and y > 612 and y < 669:
                     self.check = True
                     self.codeSet = True
+                    self.addGuesses()
+
 
             # place peg when mouse released
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -260,6 +275,8 @@ class interface():
                 self.yellow = False
                 self.purple = False
                 self.orange = False
+
+                # center pegs
                 if x > 32 and x < 180 and y > 34 and y < 67:
                     if self.drag == True:
                         if x > 32 and x < 66:
@@ -293,27 +310,119 @@ class interface():
         elif self.orange:
             window.blit(self.orangePeg, (x - offset, y - offset))
 
+    # open scoring bord
     def openScoringBoard(self):
         if self.codeSet == True:
             self.imagesToDisplay = [[self.scoringBoard, 0, 0]] + self.imagesToDisplay
 
+    # convert players input code
     def getPlayersCode(self):
         for i in range(4):
             self.playersCode[i] = self.colors.index(self.setCode[i]) + 1
 
+    # predict the next guess
     def getNextGuess(self):
         self.nextBoard = self.guessGame.predictNextGuess(self.seenBefore, self.blackWhite)
-        # self.seenBefore.append(self.nextBoard)
+        self.nextBoard = self.guessGame.convertOneHotToNums(self.nextBoard)
+        self.seenBefore.append(self.nextBoard)
 
+    # display predicted guess
     def addGuesses(self):
         self.getNextGuess()
         for i in range(4):
             self.imagesToDisplay.append([self.colors[self.nextBoard[i] - 1], (38 * i) + 30, 542 - (50 * self.rowCount)])
 
+        # reset score
+        self.blackCount = 0
+        self.whiteCount = 0
+
+    # add scoring pegs
+    def placeScorePegsAI(self):
+        offset = 20
+        for event in pygame.event.get():
+            # check if player pressed on peg
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # black
+                if x > 133 and x < 155 and y > 630 and y < 650:
+                    self.black = True
+                    self.drag = True
+                    self.selectedPeg = self.blackPeg
+                # white
+                elif x > 169 and x < 191 and y > 630 and y < 650:
+                    self.white = True
+                    self.drag = True
+                    self.selectedPeg = self.whitePeg
+                # get next guess
+                elif x > 262 and x < 318 and y > 612 and y < 669:
+                    self.check = True
+                    self.rowCount += 1
+                    self.blackWhite.append([self.blackCount, self.whiteCount])
+                    self.addGuesses()
+
+
+            # place peg when mouse released
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.black = False
+                self.white = False
+
+                # center pegs and count black and white
+                if x > 199 and x < 305 and y > 552 - (50 * self.rowCount) and y < 574 - (50 * self.rowCount):
+                    if self.drag == True:
+                        if x > 199 and x < 221:
+                            if self.selectedPeg == self.blackPeg:
+                                self.blackCount += 1
+                            elif self.selectedPeg == self.whitePeg:
+                                self.whiteCount += 1
+                            self.imagesToDisplay.append([self.selectedPeg, 197, 548 - (50 * self.rowCount)])
+                            self.drag = False
+                        elif x > 227 and x < 249:
+                            if self.selectedPeg == self.blackPeg:
+                                self.blackCount += 1
+                            elif self.selectedPeg == self.whitePeg:
+                                self.whiteCount += 1
+                            self.imagesToDisplay.append([self.selectedPeg, 225, 548 - (50 * self.rowCount)])
+                            self.drag = False
+                        elif x > 255 and x < 277:
+                            if self.selectedPeg == self.blackPeg:
+                                self.blackCount += 1
+                            elif self.selectedPeg == self.whitePeg:
+                                self.whiteCount += 1
+                            self.imagesToDisplay.append([self.selectedPeg, 253, 548 - (50 * self.rowCount)])
+                            self.drag = False
+                        elif x > 283 and x < 305:
+                            if self.selectedPeg == self.blackPeg:
+                                self.blackCount += 1
+                            elif self.selectedPeg == self.whitePeg:
+                                self.whiteCount += 1
+                            self.imagesToDisplay.append([self.selectedPeg, 280, 548 - (50 * self.rowCount)])
+                            self.drag = False
+
+        # move peg around when clicked
+        if self.black:
+            window.blit(self.blackPeg, (x - offset, y - offset))
+        elif self.white:
+            window.blit(self.whitePeg, (x - offset, y - offset))
+        # pygame.display.update()
+
+    def checkWinOrLossAI(self):
+        if self.blackCount == 4:
+            self.imagesToDisplay.append([self.wonAI, 30, 300])
+
+    # code setter function
     def codeSetter(self, x, y):
-        self.setCodeAI(x, y)
+        if self.codeSet == False:
+            self.setCodeAI(x, y)
+
+        # display all
+        for peg in self.imagesToDisplay:
+            window.blit(peg[0], (peg[1], peg[2]))
         self.openScoringBoard()
-        self.addGuesses()
+        self.checkWinOrLoss()
+        if self.blackCount != 4:
+            self.placeScorePegsAI()
+            self.checkWinOrLoss()
+
+        # self.addGuesses()
 
 
 
@@ -338,6 +447,7 @@ while run: # main loop
 
     if pg.codeSetterPressed == True:
         pg.codeSetter(x, y)
+
 
     if pg.codeBreakerPressed == True:
         pg.codeBreaker(x, y)
