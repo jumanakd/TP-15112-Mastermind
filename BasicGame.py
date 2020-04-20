@@ -12,7 +12,7 @@ from keras.layers import Dense
 from keras.models import load_model
 import keras.callbacks
 
-class BasicGame():
+class Game():
     allModels = []
 
     def __init__(self):
@@ -114,13 +114,19 @@ class BasicGame():
         print('you exceeded number of tries')
 
     def predictNextGuess(self, currentGuess, blackWhite):
+        if len(currentGuess) == 0:
+            return [[1, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0]]
         ModelID = len(currentGuess) - 1
         x = []
-        for i in range(len(currentGuess)):
-            x.append(list(flatten(self.convertToOneHot(currentGuess[i]))) + list(flatten(blackWhite[i])))
-        x = list(flatten(x))
+        startingPoint = 0
+        if len(currentGuess) > 4:
+            startingPoint = len(currentGuess) - 4
+            ModelID = 3
+        baseItems = []
+        for i in range(startingPoint, len(currentGuess)):
+            baseItems.append(list(flatten(self.convertToOneHot(currentGuess[i]))) + list(flatten(blackWhite[i])))
+        x = list(flatten(baseItems))
         y = self.allModels[ModelID].predict(numpy.asarray([x]))
-        # print(y)
         output = numpy.array(y).tolist()
         newGuess = []
         for i in range(4):
@@ -197,9 +203,9 @@ class BasicGame():
 # print(100 * correctlyFound/1296)
 
 
-
-play = BasicGame()
-play.codeMaker()
+#
+# play = Game()
+# play.codeMaker()
 # allModels = []
 # guess = [1, 1, 2, 2]
 # for i in range(1, 5):
@@ -209,7 +215,7 @@ play.codeMaker()
 # play.codeMaker()
 # play.codeBreaker()
 
-class trainModel(BasicGame):
+class trainModel(Game):
 
     # convert numerical code to one hot code
     def convertToOneHot(self, list):
@@ -329,11 +335,11 @@ class trainModel(BasicGame):
 
 
 
-gameModel = trainModel()
-# # gameModel.createTrainingData('all-possible-solutions.txt')
-for k in range(1,5):
-    m = gameModel.createModel('trainingData' + str(k) + '.csv', 100)
-    gameModel.saveModel('model.' + str(k) + '.hdf5' , m)
+# gameModel = trainModel()
+# # # gameModel.createTrainingData('all-possible-solutions.txt')
+# for k in range(1,5):
+#     m = gameModel.createModel('trainingData' + str(k) + '.csv', 100)
+#     gameModel.saveModel('model.' + str(k) + '.hdf5' , m)
 
 
 class ML(trainModel):

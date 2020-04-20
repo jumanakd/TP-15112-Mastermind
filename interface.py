@@ -2,6 +2,9 @@ import pygame
 from BasicGame import *
 from helperFunctions import *
 
+from tkinter import *
+from tkinter import messagebox
+
 class interface():
 
     def __init__(self):
@@ -19,6 +22,7 @@ class interface():
         self.menu = pygame.image.load('mainmenu.png')
         self.scoringBoard = pygame.image.load('AIboard.png')
         self.wonAI = pygame.image.load('winAI.png')
+        self.lostAI = pygame.image.load('lossAI.png')
         self.colors = [self.redPeg, self.greenPeg, self.bluePeg,
                        self.yellowPeg, self.purplePeg, self.orangePeg]
         self.red = False
@@ -35,7 +39,6 @@ class interface():
         self.codeBreakerPressed = False
         self.codeSetterPressed = False
         self.codeSet = False
-        self.rowFull = True
         self.selectedPeg = self.redPeg
         self.imagesToDisplay = list()
         self.rowCount = 0
@@ -96,11 +99,15 @@ class interface():
                     self.drag = True
                     self.selectedPeg = self.orangePeg
                 # check score
-                elif x > 262 and x < 318 and y > 612 and y < 669:
+                elif x > 262 and x < 318 and y > 612 and y < 669 and self.checkIfRowFilled() == True:
+                    pygame.mixer.music.load('click.wav')
+                    pygame.mixer.music.play()
                     self.check = True
                     self.getCode()
                     self.score = self.getScore()
                     self.rowCount += 1
+                    self.guess = [0, 0, 0, 0]
+                    self.checkWinOrLoss()
 
             # place peg when mouse released
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -113,18 +120,26 @@ class interface():
                 if x > 32 and x < 180 and y > 545 - (50 * self.rowCount ) and y < 581 - (50 * self.rowCount):
                     if self.drag == True:
                         if x > 32 and x < 66:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.guess[0] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 30, 542 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 70 and x < 104:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.guess[1] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 68, 542 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 109 and x < 143:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.guess[2] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 106, 542 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 148 and x < 180:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.guess[3] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 144, 542 - (50 * self.rowCount)])
                             self.drag = False
@@ -171,24 +186,33 @@ class interface():
                 self.score[0], self.score[1] = 0, 0
                 self.guessCode = [0, 0, 0, 0]
 
+    # check if row if full
     def checkIfRowFilled(self):
-        for color in self.guessCode:
-            if color == 0:
-                self.rowFull = False
 
+        # if not full output an error
+        if 0 in self.guess:
+            pygame.mixer.music.load('oops.wav')
+            pygame.mixer.music.play()
+            Tk().wm_withdraw()
+            messagebox.showinfo('Oops!','Please enter a full guess')
+            return False
+        else:
+            return True
 
     # check win or loss condition
     def checkWinOrLoss(self):
 
         # winning condition
         if self.score[0] == 4:
-            self.imagesToDisplay.append([self.won, 30, 300])
+            self.imagesToDisplay.append([self.won, 30, 230])
             for i in range(4):
                 self.imagesToDisplay.append([self.colors[self.hiddenCode[i] - 1], (40 * i) + 30, 30])
 
         # losing condition
         if self.rowCount == 10:
-            self.imagesToDisplay.append([self.lost, 10, 300])
+            pygame.mixer.music.load('lose.wav')
+            pygame.mixer.music.play()
+            self.imagesToDisplay.append([self.lost, 20, 230])
             for i in range(4):
                 self.imagesToDisplay.append([self.colors[self.hiddenCode[i] - 1], (40 * i) + 30, 30])
 
@@ -203,10 +227,15 @@ class interface():
 
                     #  if code breaker is clicked
                     if x > 105 and x < 230 and y > 380 and y < 505:
+                        pygame.mixer.music.load('click.wav')
+                        pygame.mixer.music.play()
                         self.codeBreakerPressed = True
                         self.openmenu = False
+
                     # if code setter is clicked
                     elif x > 105 and x < 230 and y > 520 and y < 645:
+                        pygame.mixer.music.load('click.wav')
+                        pygame.mixer.music.play()
                         self.codeSetterPressed = True
                         self.openmenu = False
             pygame.display.update()
@@ -214,17 +243,18 @@ class interface():
     # code breaker mode
     def codeBreaker(self, x, y):
         self.uploadBoard()
-        self.movePegs(x, y)
+        if self.score[0] != 4:
+            self.movePegs(x, y)
         self.placeScorePegs()
-        self.checkWinOrLoss()
+        # self.checkWinOrLoss()
 
     # let user enter his code
     def setCodeAI(self, x, y):
 
         window.blit(self.board, (0, 0))
 
-        # for peg in self.imagesToDisplay:
-        #     window.blit(peg[0], (peg[1], peg[2]))
+        for peg in self.imagesToDisplay:
+            window.blit(peg[0], (peg[1], peg[2]))
 
         offset = 20
         for event in pygame.event.get():
@@ -262,6 +292,8 @@ class interface():
                     self.selectedPeg = self.orangePeg
                 # check score
                 elif x > 262 and x < 318 and y > 612 and y < 669:
+                    pygame.mixer.music.load('click.wav')
+                    pygame.mixer.music.play()
                     self.check = True
                     self.codeSet = True
                     self.addGuesses()
@@ -280,18 +312,26 @@ class interface():
                 if x > 32 and x < 180 and y > 34 and y < 67:
                     if self.drag == True:
                         if x > 32 and x < 66:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.setCode[0] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 30, 32])
                             self.drag = False
                         elif x > 70 and x < 104:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.setCode[1] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 68, 32])
                             self.drag = False
                         elif x > 109 and x < 143:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.setCode[2] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 106, 32])
                             self.drag = False
                         elif x > 148 and x < 180:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             self.setCode[3] = self.selectedPeg
                             self.imagesToDisplay.append([self.selectedPeg, 144, 32])
                             self.drag = False
@@ -313,7 +353,8 @@ class interface():
     # open scoring bord
     def openScoringBoard(self):
         if self.codeSet == True:
-            self.imagesToDisplay = [[self.scoringBoard, 0, 0]] + self.imagesToDisplay
+            window.blit(self.scoringBoard, (0,0))
+
 
     # convert players input code
     def getPlayersCode(self):
@@ -338,7 +379,7 @@ class interface():
 
     # add scoring pegs
     def placeScorePegsAI(self):
-        offset = 20
+        offset = 10
         for event in pygame.event.get():
             # check if player pressed on peg
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -353,11 +394,14 @@ class interface():
                     self.drag = True
                     self.selectedPeg = self.whitePeg
                 # get next guess
-                elif x > 262 and x < 318 and y > 612 and y < 669:
+                elif x > 262 and x < 318 and y > 612 and y < 669: # and self.verifyUserScoring() == True:
+                    pygame.mixer.music.load('click.wav')
+                    pygame.mixer.music.play()
                     self.check = True
                     self.rowCount += 1
                     self.blackWhite.append([self.blackCount, self.whiteCount])
                     self.addGuesses()
+                    self.checkWinOrLossAI()
 
 
             # place peg when mouse released
@@ -369,6 +413,8 @@ class interface():
                 if x > 199 and x < 305 and y > 552 - (50 * self.rowCount) and y < 574 - (50 * self.rowCount):
                     if self.drag == True:
                         if x > 199 and x < 221:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             if self.selectedPeg == self.blackPeg:
                                 self.blackCount += 1
                             elif self.selectedPeg == self.whitePeg:
@@ -376,6 +422,8 @@ class interface():
                             self.imagesToDisplay.append([self.selectedPeg, 197, 548 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 227 and x < 249:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             if self.selectedPeg == self.blackPeg:
                                 self.blackCount += 1
                             elif self.selectedPeg == self.whitePeg:
@@ -383,6 +431,8 @@ class interface():
                             self.imagesToDisplay.append([self.selectedPeg, 225, 548 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 255 and x < 277:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             if self.selectedPeg == self.blackPeg:
                                 self.blackCount += 1
                             elif self.selectedPeg == self.whitePeg:
@@ -390,6 +440,8 @@ class interface():
                             self.imagesToDisplay.append([self.selectedPeg, 253, 548 - (50 * self.rowCount)])
                             self.drag = False
                         elif x > 283 and x < 305:
+                            pygame.mixer.music.load('Pop.wav')
+                            pygame.mixer.music.play()
                             if self.selectedPeg == self.blackPeg:
                                 self.blackCount += 1
                             elif self.selectedPeg == self.whitePeg:
@@ -402,27 +454,40 @@ class interface():
             window.blit(self.blackPeg, (x - offset, y - offset))
         elif self.white:
             window.blit(self.whitePeg, (x - offset, y - offset))
-        # pygame.display.update()
 
+    def verifyUserScoring(self):
+        if scoreBoard(self.playersCode, self.nextBoard) != [self.blackCount, self.whiteCount]:
+            Tk().wm_withdraw()
+            messagebox.showinfo('Caught!', 'Make sure you enter the correct score')
+            return False
+        else:
+            return True
+
+
+    # win or loss conditions
     def checkWinOrLossAI(self):
+        # if won
         if self.blackCount == 4:
-            self.imagesToDisplay.append([self.wonAI, 30, 300])
+            self.imagesToDisplay.append([self.wonAI, 30, 250])
+        # if lost
+        if self.rowCount == 9:
+            pygame.mixer.music.load('lose.wav')
+            pygame.mixer.music.play(0)
+            self.imagesToDisplay.append([self.lostAI, 20, 220])
 
     # code setter function
     def codeSetter(self, x, y):
         if self.codeSet == False:
             self.setCodeAI(x, y)
-
+        self.openScoringBoard()
         # display all
         for peg in self.imagesToDisplay:
             window.blit(peg[0], (peg[1], peg[2]))
-        self.openScoringBoard()
-        self.checkWinOrLoss()
-        if self.blackCount != 4:
-            self.placeScorePegsAI()
-            self.checkWinOrLoss()
 
-        # self.addGuesses()
+        if self.blackCount != 4 and self.rowCount != 9:
+            self.placeScorePegsAI()
+
+
 
 
 
