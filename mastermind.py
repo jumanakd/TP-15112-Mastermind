@@ -220,7 +220,7 @@ class interface():
                 self.imagesToDisplay.append([self.colors[self.hiddenCode[i] - 1], (40 * i) + 30, 30])
 
         # losing condition
-        if self.rowCount == 10:
+        if self.rowCount == 10 and self.score[0] != 4:
             pygame.mixer.music.load('lose.wav')
             pygame.mixer.music.play()
             self.imagesToDisplay.append([self.lost, 20, 230])
@@ -554,7 +554,7 @@ class interface():
             self.score = [0, 0]
             self.setCode = [0, 0, 0, 0]
             self.playersCode = [0, 0, 0, 0]
-            self.hiddenCode = generateRandomBoard()
+            self.hiddenCode = generateRandomBoard()+
             self.nextBoard = []
             self.seenBefore = []
             self.blackWhite = []
@@ -568,7 +568,6 @@ pygame.init() # initializing game
 
 window = pygame.display.set_mode((338, 700)) # game dimensions
 pygame.display.set_caption('Mastermind')
-
 
 
 run = True
